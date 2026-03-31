@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import http.server, sys, os, email.parser, json
 
-UPLOAD_DIR = os.path.expanduser('~/Downloads')
+UPLOAD_DIR = os.environ.get('UPLOAD_DIR', os.path.expanduser('~/Downloads'))
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
 
 UPLOAD_PAGE = b'''<!DOCTYPE html>

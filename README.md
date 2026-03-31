@@ -2,8 +2,6 @@
 
 Minimal upload-only HTTP server. No dependencies beyond Python 3 stdlib.
 
-Files are saved to `~/Downloads` with automatic rename on conflict.
-
 ## Features
 
 - Drag & drop + file picker
@@ -12,11 +10,28 @@ Files are saved to `~/Downloads` with automatic rename on conflict.
 - Dark mode support
 - No directory listing, no downloads — upload only
 
+## Install
+
+```
+git clone https://github.com/genericJE/uploadserver.git
+cd uploadserver
+chmod +x uploadserver.py
+
+# optional: symlink into PATH
+ln -s "$(pwd)/uploadserver.py" /usr/local/bin/uploadserver
+```
+
 ## Usage
 
 ```
-uploadserver          # port 8000
-uploadserver 9000     # custom port
+uploadserver.py          # port 8000
+uploadserver.py 9000     # custom port
 ```
 
 Listens on `0.0.0.0` so it's reachable from other devices on the network.
+
+Upload directory defaults to `~/Downloads`. Override with:
+
+```
+UPLOAD_DIR=/tmp/uploads uploadserver.py
+```
