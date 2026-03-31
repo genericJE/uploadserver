@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-import http.server, sys, os, email.parser, json
+from __future__ import annotations
+
+import email.parser
+import http.server
+import json
+import os
+import sys
+from io import BufferedIOBase
 
 UPLOAD_DIR = os.environ.get('UPLOAD_DIR', os.path.expanduser('~/Downloads'))
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
@@ -178,38 +185,40 @@ btn.addEventListener("click",()=>{
 </html>
 '''
 
-def parse_multipart(rfile, content_type, content_length):
-    boundary = None
-    for part in content_type.split(';'):
-        part = part.strip()
-        if part.startswith('boundary='):
-            boundary = part[len('boundary='):]
+def parse_multipart(
+    rfile: BufferedIOBase, content_type: str, content_length: int
+) -> list[tuple[str, bytes]]:
+    boundary: str | None = None
+    for ct_part in content_type.split(';'):
+        ct_part = ct_part.strip()
+        if ct_part.startswith('boundary='):
+            boundary = ct_part[len('boundary='):]
             break
     if not boundary:
         return []
 
-    body = rfile.read(content_length)
-    sep = ('--' + boundary).encode()
-    parts = body.split(sep)
-    files = []
+    body: bytes = rfile.read(content_length)
+    sep: bytes = ('--' + boundary).encode()
+    parts: list[bytes] = body.split(sep)
+    files: list[tuple[str, bytes]] = []
 
-    for part in parts:
-        if part in (b'', b'--', b'--\r\n', b'\r\n'):
+    for raw_part in parts:
+        if raw_part in (b'', b'--', b'--\r\n', b'\r\n'):
             continue
-        if not part.startswith(b'\r\n'):
+        if not raw_part.startswith(b'\r\n'):
             continue
-        part = part[2:]  # strip leading \r\n
-        header_end = part.find(b'\r\n\r\n')
+        raw_part = raw_part[2:]  # strip leading \r\n
+        header_end: int = raw_part.find(b'\r\n\r\n')
         if header_end == -1:
             continue
-        header_bytes = part[:header_end]
-        data = part[header_end + 4:]
+        header_bytes: bytes = raw_part[:header_end]
+        data: bytes = raw_part[header_end + 4:]
         if data.endswith(b'\r\n'):
             data = data[:-2]
 
         headers = email.parser.Parser().parsestr(header_bytes.decode('utf-8', errors='replace'))
-        disposition = headers.get('Content-Disposition', '')
-        filename = None
+        disposition: str = headers.get('Content-Disposition', '')
+        filename: str | None = None
         for param in disposition.split(';'):
             param = param.strip()
             if param.startswith('filename='):
@@ -223,34 +232,36 @@ def parse_multipart(rfile, content_type, content_length):
     return files
 
 class Handler(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
+    def do_GET(self) -> None:
         self.send_response(200)
         self.send_header('Content-Type', 'text/html')
         self.send_header('Content-Length', str(len(UPLOAD_PAGE)))
         self.end_headers()
         self.wfile.write(UPLOAD_PAGE)
 
-    def do_POST(self):
-        content_type = self.headers.get('Content-Type', '')
+    def do_POST(self) -> None:
+        content_type: str = self.headers.get('Content-Type', '')
         if 'multipart/form-data' not in content_type:
             self.send_error(400, 'Expected multipart/form-data')
             return
 
-        content_length = int(self.headers.get('Content-Length', 0))
+        content_length: int = int(self.headers.get('Content-Length', 0))
         if content_length == 0:
             self.send_error(400, 'No content')
             return
 
-        files = parse_multipart(self.rfile, content_type, content_length)
-        saved = []
+        files: list[tuple[str, bytes]] = parse_multipart(
+            self.rfile, content_type, content_length
+        )
+        saved: list[str] = []
         for filename, data in files:
-            name = os.path.basename(filename)
+            name: str = os.path.basename(filename)
             if not name:
                 continue
-            dest = os.path.join(UPLOAD_DIR, name)
+            dest: str = os.path.join(UPLOAD_DIR, name)
             if os.path.exists(dest):
                 base, ext = os.path.splitext(dest)
-                i = 1
+                i: int = 1
                 while os.path.exists(dest):
                     dest = f'{base} ({i}){ext}'
                     i += 1
@@ -260,7 +271,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.log_message('Saved %s -> %s', name, dest)
 
         if saved:
-            body = json.dumps({'ok': True, 'files': saved}).encode()
+            body: bytes = json.dumps({'ok': True, 'files': saved}).encode()
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Content-Length', str(len(body)))
@@ -274,8 +285,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
 
-    do_HEAD = do_GET
-    do_PUT = do_POST
+    do_HEAD: type[do_GET] = do_GET  # type: ignore[assignment]
+    do_PUT: type[do_POST] = do_POST  # type: ignore[assignment]
 
 if __name__ == '__main__':
     server = http.server.ThreadingHTTPServer(('0.0.0.0', PORT), Handler)
