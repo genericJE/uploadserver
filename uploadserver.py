@@ -226,7 +226,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-Type', 'text/html')
-        self.send_header('Content-Length', len(UPLOAD_PAGE))
+        self.send_header('Content-Length', str(len(UPLOAD_PAGE)))
         self.end_headers()
         self.wfile.write(UPLOAD_PAGE)
 
@@ -263,14 +263,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
             body = json.dumps({'ok': True, 'files': saved}).encode()
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
-            self.send_header('Content-Length', len(body))
+            self.send_header('Content-Length', str(len(body)))
             self.end_headers()
             self.wfile.write(body)
         else:
             body = json.dumps({'ok': False, 'error': 'No files received'}).encode()
             self.send_response(400)
             self.send_header('Content-Type', 'application/json')
-            self.send_header('Content-Length', len(body))
+            self.send_header('Content-Length', str(len(body)))
             self.end_headers()
             self.wfile.write(body)
 
