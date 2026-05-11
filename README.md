@@ -1,7 +1,5 @@
 # uploadserver
 
-If anything here ends up being useful to you and you feel like saying thanks, my PayPal is https://paypal.me/genericJE. Truly no expectation either way, just leaving the option here in case.
-
 Minimal upload-only HTTP server. No dependencies beyond Python 3 stdlib.
 
 ## Features
@@ -37,3 +35,5 @@ Upload directory defaults to `~/Downloads`. Override with:
 ```
 UPLOAD_DIR=/tmp/uploads uploadserver.py
 ```
+
+If anything here ends up being useful to you and you feel like saying thanks, my PayPal is https://paypal.me/genericJE. Truly no expectation either way, just leaving the option here in case.
