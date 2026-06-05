@@ -24,13 +24,18 @@ ln -s "$(pwd)/uploadserver.py" /usr/local/bin/uploadserver
 ## Usage
 
 ```
-uploadserver.py          # port 8000
-uploadserver.py 9000     # custom port
+uploadserver.py                      # port 8000, saves to ~/Downloads
+uploadserver.py 9000                 # custom port
+uploadserver.py -d /tmp/uploads      # custom directory
+uploadserver.py 9000 -d /tmp/uploads # both
+uploadserver.py -h                   # help
 ```
 
 Listens on `0.0.0.0` so it's reachable from other devices on the network.
 
-Upload directory defaults to `~/Downloads`. Override with:
+The target directory is created if it doesn't exist. It defaults to `~/Downloads`;
+override it with `-d`/`--dir` or the `UPLOAD_DIR` environment variable (the `-d`
+flag takes precedence):
 
 ```
 UPLOAD_DIR=/tmp/uploads uploadserver.py

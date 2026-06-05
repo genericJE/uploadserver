@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import email.parser
 import http.server
 import json
 import os
-import sys
 from io import BufferedIOBase
 
 UPLOAD_DIR = os.environ.get('UPLOAD_DIR', os.path.expanduser('~/Downloads'))
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
 
 UPLOAD_PAGE = b'''<!DOCTYPE html>
 <html lang="en">
@@ -232,6 +231,8 @@ def parse_multipart(
     return files
 
 class Handler(http.server.BaseHTTPRequestHandler):
+    upload_dir: str = UPLOAD_DIR
+
     def do_GET(self) -> None:
         self.send_response(200)
         self.send_header('Content-Type', 'text/html')
@@ -258,7 +259,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             name: str = os.path.basename(filename)
             if not name:
                 continue
-            dest: str = os.path.join(UPLOAD_DIR, name)
+            dest: str = os.path.join(self.upload_dir, name)
             if os.path.exists(dest):
                 base, ext = os.path.splitext(dest)
                 i: int = 1
@@ -289,8 +290,27 @@ class Handler(http.server.BaseHTTPRequestHandler):
     do_PUT: type[do_POST] = do_POST  # type: ignore[assignment]
 
 if __name__ == '__main__':
-    server = http.server.ThreadingHTTPServer(('0.0.0.0', PORT), Handler)
-    print(f'Upload server on http://0.0.0.0:{PORT}')
+    parser = argparse.ArgumentParser(
+        description='Minimal upload-only HTTP server.',
+    )
+    parser.add_argument(
+        'port', nargs='?', type=int, default=8000,
+        help='port to listen on (default: 8000)',
+    )
+    parser.add_argument(
+        '-d', '--dir', dest='upload_dir', metavar='DIR', default=UPLOAD_DIR,
+        help='directory to save uploads to (default: $UPLOAD_DIR or ~/Downloads)',
+    )
+    args = parser.parse_args()
+
+    port: int = args.port
+    upload_dir: str = args.upload_dir
+    Handler.upload_dir = os.path.expanduser(upload_dir)
+    os.makedirs(Handler.upload_dir, exist_ok=True)
+
+    server = http.server.ThreadingHTTPServer(('0.0.0.0', port), Handler)
+    print(f'Upload server on http://0.0.0.0:{port}', flush=True)
+    print(f'Saving uploads to {Handler.upload_dir}', flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
