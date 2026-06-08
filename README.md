@@ -13,8 +13,7 @@ Minimal upload-only HTTP server. No dependencies beyond Python 3 stdlib.
 ## Install
 
 ```
-brew tap genericJE/tools
-brew install uploadserver
+brew install genericJE/tools/uploadserver
 
 # Or manually install
 
